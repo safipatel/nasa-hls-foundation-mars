@@ -52,8 +52,10 @@ def json2ann_imageslist(json_path):
 
 def main():
     args = parse_args()
-    dataset_path = osp.join(osp.dirname(osp.realpath(__file__)),args.path)
-    out_dir = osp.join(dataset_path,"..",args.out_dir) if args.out_dir else dataset_path
+    #dataset_path = osp.join(osp.dirname(osp.realpath(__file__)),args.path)
+    dataset_path = args.path
+    #out_dir = osp.join(dataset_path,"..",args.out_dir) if args.out_dir else dataset_path
+    out_dir = args.out_dir if args.out_dir else dataset_path
     mmcv.mkdir_or_exist(out_dir)
 
     out_img_dir = osp.join(out_dir, 'images')
