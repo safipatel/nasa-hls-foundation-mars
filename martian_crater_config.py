@@ -1,8 +1,8 @@
 import os
 
 custom_imports = dict(imports=["geospatial_fm"])
-experiment = "experiment"
-project_dir = "."
+experiment = "training-output"
+project_dir = "/scratch/sp6559/xie-training"
 work_dir = os.path.join(project_dir, experiment)
 # save_path = work_dir
 
@@ -67,7 +67,7 @@ FREEZE_BACKBONE = False
 dataset_type = "RGBDataset" #NOTE: added RGBDataset.py to geospatialfm so that it gets imported AND added it to __all__, this also contains all the new transforms i added
 
 # TO BE DEFINED BY USER: data directory
-data_root = "experiment-dir/dataset"
+data_root = os.path.join(project_dir, "dataset")
 
 num_frames = 1
 img_size = 224
@@ -113,7 +113,7 @@ image_to_float32 = True
 
 # model
 # TO BE DEFINED BY USER: model path
-pretrained_weights_path = "prithvi/Prithvi_100M.pt"
+pretrained_weights_path = os.path.join(project_dir,"prithvi","Prithvi_100M.pt")
 num_layers = 12
 patch_size = 16
 embed_dim = 768
