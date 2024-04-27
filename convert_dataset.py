@@ -25,9 +25,11 @@ def copy_and_create_mask(image_object, dataset_path, out_img_dir,
                        out_mask_dir, split):
     imgpath, annotations = image_object
 
+    if Image.open(osp.join(dataset_path, split, imgpath)).size != (512,512):
+        print(imgpath, " not 512,512!")
     shutil.copyfile(osp.join(dataset_path, split, imgpath), osp.join(out_img_dir, split, imgpath))
 
-    seg_filename = osp.join(out_mask_dir, split,imgpath.split(".")[0] + '_gtmask.png')
+    seg_filename = osp.join(out_mask_dir, split,imgpath.split(".jpg")[0] + '_gtmask.png')
     labelImg = Image.new("P", (512,512), 0)
     labelImg.putpalette([0,0,0,255,255,255])
     drawer = ImageDraw.Draw( labelImg )
@@ -52,10 +54,8 @@ def json2ann_imageslist(json_path):
 
 def main():
     args = parse_args()
-    #dataset_path = osp.join(osp.dirname(osp.realpath(__file__)),args.path)
-    dataset_path = args.path
-    #out_dir = osp.join(dataset_path,"..",args.out_dir) if args.out_dir else dataset_path
-    out_dir = args.out_dir if args.out_dir else dataset_path
+    dataset_path = osp.join(osp.dirname(osp.realpath(__file__)),args.path)
+    out_dir = osp.join(osp.dirname(osp.realpath(__file__)),args.out_dir) if args.out_dir else dataset_path
     mmcv.mkdir_or_exist(out_dir)
 
     out_img_dir = osp.join(out_dir, 'images')
