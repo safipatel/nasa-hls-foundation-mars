@@ -14,10 +14,10 @@ auto_resume = True
 resume_from = None
 cudnn_benchmark = True
 
-max_intervals = 10000
-evaluation_interval = 500
+epochs = 100
+eval_epoch_interval = 5
 
-LEARNING_RATE = 1.3e-05
+LEARNING_RATE = 1.5e-5#1.3e-05
 LR_CONFIG = dict(
     policy="poly",
     warmup="linear",
@@ -27,12 +27,15 @@ LR_CONFIG = dict(
     min_lr=0.0,
     by_epoch=False,
 )
+optimizer = dict(type="AdamW", lr=LEARNING_RATE, weight_decay = 0.05, betas=(0.9, 0.999))
+optimizer_config = dict(grad_clip=None)
+lr_config = LR_CONFIG
 
 log_config = dict(
-    interval=20,
+    interval=5,
     hooks=[
-        dict(type="TextLoggerHook", by_epoch=False),
-        dict(type='WandbLoggerHook', by_epoch=False, # The Wandb logger is also supported, It requires `wandb` to be installed.
+        dict(type="TextLoggerHook", by_epoch=True),
+        dict(type='WandbLoggerHook', by_epoch=True, # The Wandb logger is also supported, It requires `wandb` to be installed.
              init_kwargs={'entity': "safipatel", # The entity used to log on Wandb
                           'project': "martian-encoders", # Project name in WandB
                           },
@@ -43,42 +46,29 @@ log_config = dict(
 
     ],
 )
-checkpoint_config = dict(by_epoch=False, interval=500)
+checkpoint_config = dict(by_epoch=True, interval=10)
 evaluation = dict(
-    interval=evaluation_interval,
+    interval=eval_epoch_interval,
     metric="mIoU",
     pre_eval=True,
-    by_epoch=False,
+    by_epoch=True,
 )
 
-# vis_backends = [
-#     dict(type='LocalVisBackend'),
-# ]
-# visualizer = dict(
-#     name='visualizer',
-#     type='SegLocalVisualizer',
-#     vis_backends=[
-#         dict(type='LocalVisBackend'),
-#     ])
+ce_weights = [0.2, 0.8] #TODO, NOTE :might need to tune this more
+loss_func = loss_decode=dict(
+            type="CrossEntropyLoss",
+            use_sigmoid=False,
+            loss_weight=1,
+            class_weight=ce_weights,
+            avg_non_ignore=True,
+        )#dict(type="DiceLoss", use_sigmoid=False, loss_weight=1, ignore_index=-1)
 
-runner = dict(type="IterBasedRunner", max_iters=max_intervals)
-workflow = [("train", 1)]
+
+runner = dict(type="EpochBasedRunner", max_epochs=epochs)
+workflow = [("train", 1), ("val", 1)]
 norm_cfg = dict(type="BN", requires_grad=True)
 FREEZE_BACKBONE = False
 
-dataset_type = "RGBDataset" #NOTE: added RGBDataset.py to geospatialfm so that it gets imported AND added it to __all__, this also contains all the new transforms i added
-
-# TO BE DEFINED BY USER: data directory
-data_root = os.path.join(project_dir, "dataset")
-
-num_frames = 1
-img_size = 224
-num_workers = 4
-samples_per_gpu = 4
-
-optimizer = dict(type="Adam", lr=LEARNING_RATE, betas=(0.9, 0.999))
-optimizer_config = dict(grad_clip=None)
-lr_config = LR_CONFIG
 
 # Download burnscars tiff and open them up, see if they are different from the numbers im used to, and if so what means for the means
 # burnscars tiff are prenormalized i think
@@ -102,20 +92,24 @@ img_norm_cfg = dict(
     ],
 )  # change the mean and std of all the bands
 
+num_frames = 1
+img_size = 224
+num_workers = 4
+samples_per_gpu = 4
+
+
 bands = [0, 1, 2]
 tile_size = 224
 orig_nsize = 512
 crop_size = (tile_size, tile_size)
 img_suffix = ".jpg"
 seg_map_suffix = "_gtmask.png"
-ignore_index = -1
+ignore_index = 2
 image_nodata = -9999
 image_nodata_replace = 0
 image_to_float32 = True
 
-# model
-# TO BE DEFINED BY USER: model path
-pretrained_weights_path = os.path.join(project_dir,"prithvi","Prithvi_100M.pt")
+
 num_layers = 12
 patch_size = 16
 embed_dim = 768
@@ -123,7 +117,12 @@ num_heads = 12
 tubelet_size = 1
 output_embed_dim = num_frames * embed_dim
 
-
+dataset_type = "RGBDataset" #NOTE: added RGBDataset.py to geospatialfm so that it gets imported AND added it to __all__, this also contains all the new transforms i added
+# TO BE DEFINED BY USER: data directory
+data_root = os.path.join(project_dir, "dataset")
+# model
+# TO BE DEFINED BY USER: model path
+pretrained_weights_path = os.path.join(project_dir,"prithvi","Prithvi_100M.pt")
 
 train_pipeline = [
     dict(type="LoadRBGImage", **img_norm_cfg, to_float32=image_to_float32), #TODO: change this and the one below to instead load from jpg and multiply to be like HLS data. 
@@ -177,8 +176,8 @@ test_pipeline = [
         ],
     ),
 ]
-
-CLASSES = ("Not within crate", "Within crater")
+num_classes = 2
+CLASSES = ("Not within crater", "Within crater")
 
 data = dict(
     samples_per_gpu=samples_per_gpu,
@@ -192,7 +191,7 @@ data = dict(
         img_suffix=img_suffix,
         seg_map_suffix=seg_map_suffix,
         pipeline=train_pipeline,
-        ignore_index=-1,
+        ignore_index=ignore_index,
     ),
     val=dict(
         type=dataset_type,
@@ -203,7 +202,7 @@ data = dict(
         img_suffix=img_suffix,
         seg_map_suffix=seg_map_suffix,
         pipeline=test_pipeline,
-        ignore_index=-1,
+        ignore_index=ignore_index,
     ),
     test=dict(
         type=dataset_type,
@@ -214,13 +213,12 @@ data = dict(
         img_suffix=img_suffix,
         seg_map_suffix=seg_map_suffix,
         pipeline=test_pipeline,
-        ignore_index=-1,
+        ignore_index=ignore_index,
     ),
 )
 
 
 
-loss_func = dict(type="DiceLoss", use_sigmoid=False, loss_weight=1, ignore_index=-1)
 
 model = dict(
     type="TemporalEncoderDecoder",
@@ -252,11 +250,12 @@ model = dict(
         in_channels=output_embed_dim,
         type="FCNHead",
         in_index=-1,
+        ignore_index=ignore_index,
         channels=256,
         num_convs=1,
         concat_input=False,
         dropout_ratio=0.1,
-        norm_cfg=dict(type="BN", requires_grad=True),
+        norm_cfg=norm_cfg,
         align_corners=False,
         loss_decode=loss_func,
     ),
