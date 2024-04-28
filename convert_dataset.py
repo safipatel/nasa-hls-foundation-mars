@@ -37,7 +37,7 @@ def copy_and_create_mask(image_object, dataset_path, out_img_dir,
     drawer = ImageDraw.Draw( labelImg )
     for ann in annotations:
         if outline_only:
-            drawer.polygon(ann, outline=1 )
+            drawer.polygon(ann, outline=1, width=5 )
         else:
             drawer.polygon(ann, fill=1)
     labelImg.save(seg_filename, 'PNG')
