@@ -17,7 +17,7 @@ cudnn_benchmark = True
 epochs = 100
 eval_epoch_interval = 5
 
-LEARNING_RATE = 1.5e-5#1.3e-05
+LEARNING_RATE = 1.04e-5#1.3e-05
 LR_CONFIG = dict(
     policy="poly",
     warmup="linear",
@@ -54,7 +54,7 @@ evaluation = dict(
     by_epoch=True,
 )
 
-ce_weights = [0.2, 0.8] #TODO, NOTE :might need to tune this more
+ce_weights = [0.05,0.95] #TODO, NOTE :might need to tune this more
 loss_func = loss_decode=dict(
             type="CrossEntropyLoss",
             use_sigmoid=False,

@@ -16,13 +16,15 @@ def parse_args():
     parser.add_argument('path', help='cityscapes data path')
     parser.add_argument('--gt-dir', default='gtFine', type=str)
     parser.add_argument('-o', '--out-dir', help='output path')
+    parser.add_argument('--outline',  help='outline')
+
     args = parser.parse_args()
     return args
 
 
 
 def copy_and_create_mask(image_object, dataset_path, out_img_dir,
-                       out_mask_dir, split):
+                       out_mask_dir, split, outline_only = False):
     imgpath, annotations = image_object
 
     if Image.open(osp.join(dataset_path, split, imgpath)).size != (512,512):
@@ -34,7 +36,10 @@ def copy_and_create_mask(image_object, dataset_path, out_img_dir,
     labelImg.putpalette([0,0,0,255,255,255])
     drawer = ImageDraw.Draw( labelImg )
     for ann in annotations:
-        drawer.polygon(ann, fill=1 )
+        if outline_only:
+            drawer.polygon(ann, outline=1 )
+        else:
+            drawer.polygon(ann, fill=1)
     labelImg.save(seg_filename, 'PNG')
 
 def json2ann_imageslist(json_path):
@@ -58,6 +63,7 @@ def main():
     out_dir = osp.join(osp.dirname(osp.realpath(__file__)),args.out_dir) if args.out_dir else dataset_path
     mmcv.mkdir_or_exist(out_dir)
 
+    use_outline_only = args.outline == "True"
     out_img_dir = osp.join(out_dir, 'images')
     out_mask_dir = osp.join(out_dir, 'annotations')
     
@@ -79,21 +85,21 @@ def main():
             dataset_path = dataset_path,
             out_img_dir=out_img_dir,
             out_mask_dir=out_mask_dir,
-            split = "train"), train_img_list)
+            split = "train", outline_only = use_outline_only), train_img_list)
     mmcv.track_progress(
         partial(
             copy_and_create_mask,
             dataset_path = dataset_path,
             out_img_dir=out_img_dir,
             out_mask_dir=out_mask_dir,
-            split = "test"), test_img_list)
+            split = "test", outline_only = use_outline_only), test_img_list)
     mmcv.track_progress(
         partial(
             copy_and_create_mask,
             dataset_path = dataset_path,
             out_img_dir=out_img_dir,
             out_mask_dir=out_mask_dir,
-            split = "valid"), valid_img_list)
+            split = "valid",outline_only = use_outline_only), valid_img_list)
     print('Done!')
 
 
