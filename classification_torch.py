@@ -45,6 +45,7 @@ EXPONENTIAL_LR_GAMMA = 0.1
 WARMUP_ITERS= 2500
 MAX_STEPS = 20000
 DROPOUT_PROB = 0.8
+MASK_REGULARIZATION_RATIO = 0.2
 
 num_workers = 1
 samples_per_gpu = 4
@@ -204,10 +205,10 @@ class ClassificationViT(nn.Module):
         self.dropout = torch.nn.Dropout(DROPOUT_PROB)
         self.classifier = torch.nn.Linear(embed_size, 1)
 
-    def forward(self, x):
+    def forward(self, x, mask_ratio=0.0):
         # https://discuss.pytorch.org/t/ensemble-of-five-transformers-for-text-classification/142719
         # Also look at B.1.1 Fine-tuning of ViT paper https://arxiv.org/pdf/2010.11929
-        features, _, _, _ = self.encoder_model.forward_encoder(x, mask_ratio=0)
+        features, _, _, _ = self.encoder_model.forward_encoder(x, mask_ratio=mask_ratio)
         reshaped_features = features[:, 0, :]
         reshaped_features = self.dropout(reshaped_features)
         # output = self.pre_classifier(reshaped_features)
@@ -216,7 +217,7 @@ class ClassificationViT(nn.Module):
         return output
 
 class ClassificationTrainingModule(L.LightningModule):
-    def __init__(self, model):
+    def __init__(self, model: ClassificationViT):
         super().__init__()
         self.save_hyperparameters(ignore=['model'])
         self.model = model
@@ -227,7 +228,7 @@ class ClassificationTrainingModule(L.LightningModule):
         # training_step defines the train loop.
         x, y = batch
         y = y.unsqueeze(1).float()
-        x = self.model(x)
+        x = self.model(x,mask_ratio=MASK_REGULARIZATION_RATIO)
         loss = nnF.binary_cross_entropy_with_logits(x,y)
         self.train_accuracy(x, y)
         self.log('train/acc-step', self.train_accuracy,prog_bar=True)#, on_step=True, on_epoch=False)
@@ -253,6 +254,8 @@ class ClassificationTrainingModule(L.LightningModule):
             # if step < WARMUP_ITERS:
             #     return  step / WARMUP_ITERS
             # return WARMUP_ITERS ** 0.5 * step ** -0.5
+            # https://stackoverflow.com/questions/65343377/adam-optimizer-with-warmup-on-pytorch
+
             if step < WARMUP_ITERS:  # current_step / warmup_steps * base_lr
                 return float(step / WARMUP_ITERS)
             else:                                 # (num_training_steps - current_step) / (num_training_steps - warmup_steps) * base_lr
