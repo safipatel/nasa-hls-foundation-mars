@@ -228,8 +228,8 @@ class ClassificationTrainingModule(L.LightningModule):
         x = self.model(x)
         loss = nnF.binary_cross_entropy_with_logits(x,y)
         self.train_accuracy(x, y)
-        self.log('train/acc-step', self.train_accuracy)#, on_step=True, on_epoch=False)
-        self.log("train/loss", loss)#, on_step=True, on_epoch=False)
+        self.log('train/acc-step', self.train_accuracy,prog_bar=True)#, on_step=True, on_epoch=False)
+        self.log("train/loss", loss,prog_bar=True)#, on_step=True, on_epoch=False)
         return {"train/loss": loss,'train/acc-step':self.train_accuracy}
     
     def validation_step(self, batch, batch_idx):
@@ -239,8 +239,8 @@ class ClassificationTrainingModule(L.LightningModule):
         x = self.model(x)
         val_loss = nnF.binary_cross_entropy_with_logits(x,y) #combines sigmoid activation with ce loss
         self.valid_accuracy(x, y)
-        self.log('val/acc-step', self.valid_accuracy)#, on_step=True, on_epoch=False)
-        self.log("val/loss", val_loss)#, on_step=True, on_epoch=False)
+        self.log('val/acc-step', self.valid_accuracy,prog_bar=True)#, on_step=True, on_epoch=False)
+        self.log("val/loss", val_loss,prog_bar=True)#, on_step=True, on_epoch=False)
         return {"val/loss": val_loss,'val/acc-step':self.valid_accuracy}
 
     def configure_optimizers(self):
