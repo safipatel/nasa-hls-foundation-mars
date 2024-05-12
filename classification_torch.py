@@ -20,7 +20,7 @@ from pytorch_lightning.loggers.wandb import WandbLogger
 num_frames = 1
 img_size = 224
 num_workers = 4
-samples_per_gpu = 4
+samples_per_gpu = 8
 
 # bands = [0, 1, 2]
 tile_size = 224
@@ -43,7 +43,7 @@ pretrained_config = os.path.join(project_dir,"prithvi","Prithvi_100M_config.yaml
 torch.backends.cudnn.benchmark = True
 L.seed_everything(1)
 
-LEARNING_RATE = 1.3e-05
+LEARNING_RATE = 1.1e-05
 EXPONENTIAL_LR_GAMMA = 0.1
 WARMUP_ITERS= 1500
 MAX_STEPS = 10000
@@ -200,7 +200,7 @@ class ClassificationViT(nn.Module):
         del self.encoder_model.decoder_pred
 
         # self.pre_classifier = torch.nn.Linear(embed_dim, embed_dim)
-        self.dropout = torch.nn.Dropout(0.1)
+        self.dropout = torch.nn.Dropout(0.3)
         self.classifier = torch.nn.Linear(embed_size, 1)
 
     def forward(self, x):
@@ -240,8 +240,8 @@ class ClassificationTrainingModule(L.LightningModule):
         x = self.model(x)
         val_loss = nnF.binary_cross_entropy_with_logits(x,y) #combines sigmoid activation with ce loss
         self.valid_accuracy(x, y)
-        self.log('val/acc-step', self.valid_accuracy,prog_bar=True)#, on_step=True, on_epoch=False)
-        self.log("val/loss", val_loss,prog_bar=True)#, on_step=True, on_epoch=False)
+        self.log('val/acc-step', self.valid_accuracy,prog_bar=True,sync_dist=True)#)#, on_step=True, on_epoch=False)
+        self.log("val/loss", val_loss,prog_bar=True,sync_dist=True)#, on_step=True, on_epoch=False)
         #return {"val/loss": val_loss,'val/acc-step':self.valid_accuracy}
         return val_loss
     
