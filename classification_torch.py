@@ -40,7 +40,7 @@ pretrained_config = os.path.join(project_dir,"prithvi","Prithvi_100M_config.yaml
 torch.backends.cudnn.benchmark = True
 L.seed_everything(1)
 
-LEARNING_RATE = 1.0e-06
+LEARNING_RATE = 1.1e-06
 EXPONENTIAL_LR_GAMMA = 0.1
 WARMUP_ITERS= 1500
 MAX_STEPS = 10000
@@ -250,10 +250,13 @@ class ClassificationTrainingModule(L.LightningModule):
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.999))
         def warmup_routine(step):
-            if step < WARMUP_ITERS:
-                return  step / WARMUP_ITERS
-            return WARMUP_ITERS ** 0.5 * step ** -0.5
-        
+            # if step < WARMUP_ITERS:
+            #     return  step / WARMUP_ITERS
+            # return WARMUP_ITERS ** 0.5 * step ** -0.5
+            if step < WARMUP_ITERS:  # current_step / warmup_steps * base_lr
+                return float(step / WARMUP_ITERS)
+            else:                                 # (num_training_steps - current_step) / (num_training_steps - warmup_steps) * base_lr
+                return max(0.0, float(10000 - step) / float(max(1, 10000- WARMUP_ITERS)))
         scheduler = (
             {
                 "scheduler": LambdaLR(optimizer, warmup_routine),
