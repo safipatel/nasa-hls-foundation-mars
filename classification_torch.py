@@ -45,7 +45,8 @@ torch.backends.cudnn.benchmark = True
 
 LEARNING_RATE = 1.3e-05
 EXPONENTIAL_LR_GAMMA = 0.1
-WARMUP_ITERS= 1500,
+WARMUP_ITERS= 1500
+MAX_STEPS = 10000
 
 
 img_norm_cfg = dict(
@@ -67,7 +68,7 @@ img_norm_cfg = dict(
     ],
 )  # change the mean and std of all the bands
 
-class FilenameToNumpy(object):
+class PILToNumpyReflct(object):
     def __init__(self,  means, stds, to_float32=False, nodata=None, nodata_replace=0.0):
         self.to_float32 = to_float32
         self.nodata = nodata
@@ -75,10 +76,8 @@ class FilenameToNumpy(object):
         self.conversion_means = means
         self.conversion_stds = stds
 
-    def __call__(self, filename):
-        image_file = Image.open(filename)
-        image_file.load()
-        img = np.asarray( image_file, dtype="uint16" )
+    def __call__(self, pil_img):
+        img = np.asarray( pil_img, dtype="uint16" )
         img = img.transpose(2,0,1)[[2,1,0]] # Put channels first and convert to BGR from RGB
 
         img[0,:]  = img[0,:] * ((self.conversion_means[0] + self.conversion_stds[0] * 2) / 255)
@@ -138,13 +137,13 @@ class Reshape(object):
 
 data_transforms = {
     'train': transforms.Compose([
-        FilenameToNumpy(**img_norm_cfg, to_float32=image_to_float32),
+        PILToNumpyReflct(**img_norm_cfg, to_float32=image_to_float32),
         transforms.ToTensor(),
         TorchNormalizeAndDuplicate(**img_norm_cfg, duplicate = True),
         Reshape((6, num_frames, tile_size, tile_size)),
     ]),
     'valid': transforms.Compose([
-        FilenameToNumpy(),
+        PILToNumpyReflct(**img_norm_cfg, to_float32=image_to_float32),
         transforms.ToTensor(),
         TorchNormalizeAndDuplicate(**img_norm_cfg, duplicate = True),
         Reshape((6, num_frames, tile_size, tile_size)),
@@ -157,9 +156,15 @@ data_transforms = {
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_root, x),
                                           data_transforms[x])
                   for x in ['train', 'valid']}
-dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=samples_per_gpu,
-                                             shuffle=True, num_workers=num_workers)
-              for x in ['train', 'valid']}
+dataloaders = {'train': torch.utils.data.DataLoader(image_datasets['train'], 
+                                                    batch_size=samples_per_gpu,
+                                                    shuffle=True,
+                                                    num_workers=num_workers),
+                'valid': torch.utils.data.DataLoader(image_datasets['valid'], 
+                                                    batch_size=samples_per_gpu,
+                                                    shuffle=False,
+                                                    num_workers=num_workers)
+            }
 dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'valid']}
 
 class_names = image_datasets['train'].classes
@@ -182,7 +187,7 @@ embed_dim = model_args["embed_dim"]
 
 class ClassificationViT(nn.Module):
     def __init__(self,vit_args,checkpoint_loaded,embed_size):
-        super(ClassificationViT, self).init()
+        super(ClassificationViT, self).__init__()
         self.encoder_model = MaskedAutoencoderViT(**vit_args)
         del checkpoint_loaded['pos_embed']
         del checkpoint_loaded['decoder_pos_embed']
@@ -206,7 +211,7 @@ class ClassificationViT(nn.Module):
 class ClassificationTrainingModule(L.LightningModule):
     def __init__(self, model):
         super().__init__()
-        self.save_hyperparameters()
+        self.save_hyperparameters(ignore=['model'])
         self.model = model
         self.train_accuracy = BinaryAccuracy()
         self.valid_accuracy = BinaryAccuracy()
@@ -256,7 +261,7 @@ crater_class_model = ClassificationTrainingModule(ClassificationViT(model_args,c
 
 lr_monitor = LearningRateMonitor(logging_interval='step')
 checkpoint_callback = ModelCheckpoint(
-    save_top_5=10,
+    save_top_k=5,
     monitor="global_step",
     mode="max",
     dirpath=work_dir,
@@ -264,14 +269,16 @@ checkpoint_callback = ModelCheckpoint(
 wandb_logger = WandbLogger(project="Martian Encoder")
 
 # train model
-trainer = L.Trainer(default_root_dir=work_dir, logger=wandb_logger)
+trainer = L.Trainer(default_root_dir=work_dir, 
+                    logger=wandb_logger,
+                    max_steps=MAX_STEPS,
+                    devices=num_workers,
+                    accelerator="gpu",
+                    callbacks=[checkpoint_callback, lr_monitor])
 trainer.fit(model=crater_class_model,
             train_dataloaders=dataloaders["train"],
             val_dataloaders=dataloaders["valid"],
-            devices=num_workers,
-            accelerator="gpu",
-            ckpt_path="last",
-            callbacks=[checkpoint_callback, lr_monitor])
+            ckpt_path="last",)
 
 #region old train
 # def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
