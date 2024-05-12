@@ -76,8 +76,8 @@ class PILToNumpyReflct(object):
         self.conversion_means = means
         self.conversion_stds = stds
 
-    def __call__(self, pil_img_label):
-        img = np.asarray( pil_img_label[0], dtype="uint16" )
+    def __call__(self, pil_img):
+        img = np.asarray( pil_img, dtype="uint16" )
         img = img.transpose(2,0,1)[[2,1,0]] # Put channels first and convert to BGR from RGB
 
         img[0,:]  = img[0,:] * ((self.conversion_means[0] + self.conversion_stds[0] * 2) / 255)
@@ -85,7 +85,7 @@ class PILToNumpyReflct(object):
         img[2,:]  = img[2,:] * ((self.conversion_means[2] + self.conversion_stds[2] * 2) / 255)
 
         # to channels last format
-        # img = np.transpose(img, (1, 2, 0))
+        img = np.transpose(img, (1, 2, 0))
         if self.to_float32:
             img = img.astype(np.float32)
 
