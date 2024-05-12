@@ -43,7 +43,7 @@ pretrained_config = os.path.join(project_dir,"prithvi","Prithvi_100M_config.yaml
 torch.backends.cudnn.benchmark = True
 L.seed_everything(1)
 
-LEARNING_RATE = 1.1e-05
+LEARNING_RATE = 1.0e-05
 EXPONENTIAL_LR_GAMMA = 0.1
 WARMUP_ITERS= 1500
 MAX_STEPS = 10000
@@ -200,7 +200,7 @@ class ClassificationViT(nn.Module):
         del self.encoder_model.decoder_pred
 
         # self.pre_classifier = torch.nn.Linear(embed_dim, embed_dim)
-        self.dropout = torch.nn.Dropout(0.3)
+        self.dropout = torch.nn.Dropout(0.15)
         self.classifier = torch.nn.Linear(embed_size, 1)
 
     def forward(self, x):
@@ -208,6 +208,7 @@ class ClassificationViT(nn.Module):
         # Also look at B.1.1 Fine-tuning of ViT paper https://arxiv.org/pdf/2010.11929
         features, _, _, _ = self.encoder_model.forward_encoder(x, mask_ratio=0)
         reshaped_features = features[:, 0, :]
+        reshaped_features = self.dropout(reshaped_features)
         # output = self.pre_classifier(reshaped_features)
         # output = torch.nn.Tanh(output)
         output = self.classifier(reshaped_features)
