@@ -19,9 +19,6 @@ from pytorch_lightning.loggers.wandb import WandbLogger
 
 num_frames = 1
 img_size = 224
-num_workers = 4
-samples_per_gpu = 8
-
 # bands = [0, 1, 2]
 tile_size = 224
 # orig_nsize = 512
@@ -47,6 +44,10 @@ LEARNING_RATE = 1.0e-05
 EXPONENTIAL_LR_GAMMA = 0.1
 WARMUP_ITERS= 1500
 MAX_STEPS = 10000
+DROPOUT_PROB = 0.3
+
+num_workers = 4
+samples_per_gpu = 4
 
 
 img_norm_cfg = dict(
@@ -200,7 +201,7 @@ class ClassificationViT(nn.Module):
         del self.encoder_model.decoder_pred
 
         # self.pre_classifier = torch.nn.Linear(embed_dim, embed_dim)
-        self.dropout = torch.nn.Dropout(0.15)
+        self.dropout = torch.nn.Dropout(DROPOUT_PROB)
         self.classifier = torch.nn.Linear(embed_size, 1)
 
     def forward(self, x):
