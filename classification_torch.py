@@ -192,7 +192,12 @@ class ClassificationViT(nn.Module):
         del checkpoint_loaded['pos_embed']
         del checkpoint_loaded['decoder_pos_embed']
         _ = self.encoder_model.load_state_dict(checkpoint_loaded, strict=False)
-
+        del self.encoder_model.decoder_embed
+        del self.encoder_model.mask_token
+        del self.encoder_model.decoder_pos_embed
+        del self.encoder_model.decoder_blocks
+        del self.encoder_model.decoder_norm
+        del self.encoder_model.decoder_pred
 
         # self.pre_classifier = torch.nn.Linear(embed_dim, embed_dim)
         self.dropout = torch.nn.Dropout(0.1)
@@ -201,7 +206,7 @@ class ClassificationViT(nn.Module):
     def forward(self, x):
         # https://discuss.pytorch.org/t/ensemble-of-five-transformers-for-text-classification/142719
         # Also look at B.1.1 Fine-tuning of ViT paper https://arxiv.org/pdf/2010.11929
-        features, _, _ = self.encoder_model.forward_encoder(x, mask_ratio=0)
+        features, _, _, _ = self.encoder_model.forward_encoder(x, mask_ratio=0)
         reshaped_features = features[:, 0, :]
         # output = self.pre_classifier(reshaped_features)
         # output = torch.nn.Tanh(output)
@@ -219,6 +224,7 @@ class ClassificationTrainingModule(L.LightningModule):
     def training_step(self, batch, batch_idx):
         # training_step defines the train loop.
         x, y = batch
+        y = y.unsqueeze(1)
         x = self.model(x)
         loss = nnF.binary_cross_entropy_with_logits(x,y)
         self.train_accuracy(x, y)
@@ -229,6 +235,7 @@ class ClassificationTrainingModule(L.LightningModule):
     def validation_step(self, batch, batch_idx):
         # this is the validation loop
         x, y = batch
+        y = y.unsqueeze(1)
         x = self.model(x)
         val_loss = nnF.binary_cross_entropy_with_logits(x,y) #combines sigmoid activation with ce loss
         self.valid_accuracy(x, y)
