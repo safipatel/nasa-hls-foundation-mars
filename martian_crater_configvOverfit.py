@@ -73,8 +73,8 @@ data_root = os.path.join(project_dir, "dataset")
 
 num_frames = 1
 img_size = 224
-num_workers = 4
-samples_per_gpu = 4
+num_workers = 1
+samples_per_gpu = 1
 
 optimizer = dict(type="Adam", lr=LEARNING_RATE, betas=(0.9, 0.999))
 optimizer_config = dict(grad_clip=None)
