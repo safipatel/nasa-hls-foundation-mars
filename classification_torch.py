@@ -230,7 +230,8 @@ class ClassificationTrainingModule(L.LightningModule):
         self.train_accuracy(x, y)
         self.log('train/acc-step', self.train_accuracy,prog_bar=True)#, on_step=True, on_epoch=False)
         self.log("train/loss", loss,prog_bar=True)#, on_step=True, on_epoch=False)
-        return {"train/loss": loss,'train/acc-step':self.train_accuracy}
+        return loss
+        #return {"train/loss": loss,'train/acc-step':self.train_accuracy}
     
     def validation_step(self, batch, batch_idx):
         # this is the validation loop
@@ -241,8 +242,9 @@ class ClassificationTrainingModule(L.LightningModule):
         self.valid_accuracy(x, y)
         self.log('val/acc-step', self.valid_accuracy,prog_bar=True)#, on_step=True, on_epoch=False)
         self.log("val/loss", val_loss,prog_bar=True)#, on_step=True, on_epoch=False)
-        return {"val/loss": val_loss,'val/acc-step':self.valid_accuracy}
-
+        #return {"val/loss": val_loss,'val/acc-step':self.valid_accuracy}
+        return val_loss
+    
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.999))
         def warmup_routine(step):
