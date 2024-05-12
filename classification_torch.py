@@ -224,7 +224,7 @@ class ClassificationTrainingModule(L.LightningModule):
     def training_step(self, batch, batch_idx):
         # training_step defines the train loop.
         x, y = batch
-        y = y.unsqueeze(1)
+        y = y.unsqueeze(1).float()
         x = self.model(x)
         loss = nnF.binary_cross_entropy_with_logits(x,y)
         self.train_accuracy(x, y)
@@ -235,11 +235,11 @@ class ClassificationTrainingModule(L.LightningModule):
     def validation_step(self, batch, batch_idx):
         # this is the validation loop
         x, y = batch
-        y = y.unsqueeze(1)
+        y = y.unsqueeze(1).float()
         x = self.model(x)
         val_loss = nnF.binary_cross_entropy_with_logits(x,y) #combines sigmoid activation with ce loss
         self.valid_accuracy(x, y)
-        self.log('valid/acc-step', self.valid_accuracy, on_step=True, on_epoch=False)
+        self.log('val/acc-step', self.valid_accuracy, on_step=True, on_epoch=False)
         self.log("val/loss", val_loss)
 
     def configure_optimizers(self):
@@ -269,7 +269,7 @@ crater_class_model = ClassificationTrainingModule(ClassificationViT(model_args,c
 lr_monitor = LearningRateMonitor(logging_interval='step')
 checkpoint_callback = ModelCheckpoint(
     save_top_k=5,
-    monitor="global_step",
+    monitor="step",
     mode="max",
     dirpath=work_dir,
 )
