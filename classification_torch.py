@@ -128,18 +128,26 @@ class TorchNormalizeAndDuplicate(object):
 
         return img
 
+class Reshape(object):
+    def __init__(self, new_shape):
+        self.new_shape = new_shape
+
+    def __call__(self, img):
+        return img.reshape(self.new_shape)
+
+
 data_transforms = {
     'train': transforms.Compose([
         FilenameToNumpy(**img_norm_cfg, to_float32=image_to_float32),
         transforms.ToTensor(),
         TorchNormalizeAndDuplicate(**img_norm_cfg, duplicate = True),
-        transforms.Resize((6, num_frames, tile_size, tile_size)),
+        Reshape((6, num_frames, tile_size, tile_size)),
     ]),
     'valid': transforms.Compose([
         FilenameToNumpy(),
         transforms.ToTensor(),
         TorchNormalizeAndDuplicate(**img_norm_cfg, duplicate = True),
-        transforms.Resize((6, num_frames, tile_size, tile_size)),
+        Reshape((6, num_frames, tile_size, tile_size)),
     ]),
 }
 
