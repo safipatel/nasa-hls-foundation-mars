@@ -36,7 +36,7 @@ image_to_float32 = True
 experiment = "training-output"
 project_dir = "/scratch/sp6559/xie-training"
 work_dir = os.path.join(project_dir, experiment)
-data_root = os.path.join(project_dir, "dataset","images")
+data_root = os.path.join(project_dir, "dataset","classification_dataset","images")
 pretrained_weights_path = os.path.join(project_dir,"prithvi","Prithvi_100M.pt")
 pretrained_config = os.path.join(project_dir,"prithvi","Prithvi_100M_config.yaml")
 
@@ -130,7 +130,7 @@ class TorchNormalizeAndDuplicate(object):
 
 data_transforms = {
     'train': transforms.Compose([
-        FilenameToNumpy(),
+        FilenameToNumpy(**img_norm_cfg, to_float32=image_to_float32),
         transforms.ToTensor(),
         TorchNormalizeAndDuplicate(**img_norm_cfg, duplicate = True),
         transforms.Resize((6, num_frames, tile_size, tile_size)),
