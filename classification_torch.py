@@ -40,11 +40,11 @@ pretrained_config = os.path.join(project_dir,"prithvi","Prithvi_100M_config.yaml
 torch.backends.cudnn.benchmark = True
 L.seed_everything(1)
 
-LEARNING_RATE = 7.5e-06
+LEARNING_RATE = 4.5e-06
 EXPONENTIAL_LR_GAMMA = 0.1
 WARMUP_ITERS= 2500
 MAX_STEPS = 20000
-DROPOUT_PROB = 0.8
+DROPOUT_PROB = 0.6
 
 num_workers = 1
 samples_per_gpu = 4
@@ -203,7 +203,8 @@ class ClassificationViT(nn.Module):
         # self.pre_classifier = torch.nn.Linear(embed_dim, embed_dim)
         self.dropout = torch.nn.Dropout(DROPOUT_PROB)
         self.classifier = torch.nn.Linear(embed_size, 1)
-
+        for _, param in self.encoder_model.named_parameters():  # freeze decoder weights
+            param.requires_grad = False
     def forward(self, x):
         # https://discuss.pytorch.org/t/ensemble-of-five-transformers-for-text-classification/142719
         # Also look at B.1.1 Fine-tuning of ViT paper https://arxiv.org/pdf/2010.11929
@@ -248,7 +249,7 @@ class ClassificationTrainingModule(L.LightningModule):
         return val_loss
     
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.999))
+        optimizer = optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=LEARNING_RATE, betas=(0.9, 0.999))
         def warmup_routine(step):
             # if step < WARMUP_ITERS:
             #     return  step / WARMUP_ITERS
