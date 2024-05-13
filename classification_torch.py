@@ -40,12 +40,12 @@ pretrained_config = os.path.join(project_dir,"prithvi","Prithvi_100M_config.yaml
 torch.backends.cudnn.benchmark = True
 L.seed_everything(1)
 
-LEARNING_RATE = 8.7e-06
+LEARNING_RATE = 8.3e-06
 # EXPONENTIAL_LR_GAMMA = 0.1
-WARMUP_ITERS= 1800
+WARMUP_ITERS= 2000
 MAX_STEPS = 5000
 DROPOUT_PROB = 0.5
-MASK_REGULARIZATION_RATIO = 0.38
+MASK_REGULARIZATION_RATIO = 0.375
 
 num_workers = 1
 samples_per_gpu = 4
