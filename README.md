@@ -1,7 +1,16 @@
-# nasa-hls-foundation-mars
-How well does the NASA/IBM HLS Geospatial Foundation Model perform on downstream applications on Mars satellite imagery?
+# Efficacy of Generalizing NASA’s HLS  Geospatial Foundation Model for Downstream Applications on Mars
+Central Research Question: Can the NASA HLS geospatial foundation model that has only been trained over Earth data and has been shown to be finetuned on downstream segmentation applications, be generalizable and robust enough to effectively perform a comparable segmentation task on Mars with a comparable amount of training data?
 
-* Check Reconstruction Results to see how first results.
-* Look at config to see how our configuration for mmsegmentation looks
-* convert_dataset changes from coco-segmentation format from roboflow into masks and with folders in the format that mmsegmentation needs
-* Notice also: there has been some changed to Prithvi.py compared to the original one on the HLS github, this is because I needed to make some changes in order to allow for the model to evaluate if I gave them a mask
+**Abstract.** The Prithvi-100M model is a foundation model created for geospatial tasks after being trained on Earth satellite data. It performs remarkably well on finetuned tasks on Earth, with the original researchers showing impressive results with minmal data. Our study aims to push this generalizability to see if it could work on Mars. 
+We attempted a very similar segmentation task as the original researchers by attempting to train a model that could segment craters in Martian images. After thorough experiments we concluded that the foundation model was not generalizable enough as we first thought to train a finetuned model with a comparable segmentation task on a comparable amount of data. However, we were able to successfully finetune for a different and noncomparable classification task with an ending 90.01\% validation accuracy. This success, along with the our insights regarding a better and impressive imputation method led us to conclude that while this foundation model may be limited in its generalizability than first hypothesized, there is still great potential to use this foundation model for downstream tasks in a way that could still benefit planetary science.
+
+## Environment setup
+Follow instructions here [at the original HLS repo](https://github.com/NASA-IMPACT/hls-foundation-os) to setup the environment, paying close attention to the mmcv and mmsegmentation tool installation. Then, also make sure to install `pytorch-lightning==2.0` in order to use our training code for the classification.
+
+## Repository contents
+- `prithvi`: Contains the model class code which is needed for training. From the HLS main repository but made some minor modifications for our own purposes.
+- `geospatial-update`: Code that has to be moved into the cloned `hls-foundation-os` repository within your environment in order to hook your custom pipeline and dataset into the mmsegmentation tool.
+- `training-code`: The actual training code. The mmsegmentation training files start with `martian_crater_config.` They are separate ones in the course of different experiments. The classification one using PyTorch Lightning is in `classification_torch.py`
+- Notebooks: exploration.ipynb was just us playing around with the model. Reconstruction Results.ipynb is our actual results for the evaluation of different imputation methods. 
+- `utilities`: All the utilities used in the course of this research. `convert_dataset.py` takes a COCO segmentation type dataset that has polygon points that we got from roboflow and converts its to actual segmentation masks. The .scm are GIMP script-fu files used to quickly extract 224x224 images from a larger image. `sort_class.py` and `make_cls_dataset.py` are both used for taking the saved images from the GIMP tools and making them into a dataset to use.
+- `datasets`: Contains the dataset downloaded from RoboFlow in the COCOSegmentation format (`segmentation_dataset.zip`) and the manually created one used for classification (`classification_dataset.zip`).
