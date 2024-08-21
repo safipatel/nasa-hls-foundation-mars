@@ -3,7 +3,8 @@ Central Research Question: Can the NASA HLS geospatial foundation model that has
 
 **Abstract.** The Prithvi-100M model is a foundation model created for geospatial tasks after being trained on Earth satellite data. It performs remarkably well on finetuned tasks on Earth, with the original researchers showing impressive results with minmal data. Our study aims to push this generalizability to see if it could work on Mars. 
 We attempted a very similar segmentation task as the original researchers by attempting to train a model that could segment craters in Martian images. After thorough experiments we concluded that the foundation model was not generalizable enough as we first thought to train a finetuned model with a comparable segmentation task on a comparable amount of data. However, we were able to successfully finetune for a different and noncomparable classification task with an ending 90.01\% validation accuracy. This success, along with the our insights regarding a better and impressive imputation method led us to conclude that while this foundation model may be limited in its generalizability than first hypothesized, there is still great potential to use this foundation model for downstream tasks in a way that could still benefit planetary science.
-
+## View full report here: 
+[Efficacy of Generalizing NASA’s HLS Geospatial Foundation Model for Downstream Applications on Mars Full Report](https://github.com/safipatel/martian-hls-foundation-model/blob/main/Efficacy%20of%20Generalizing%20NASA%E2%80%99s%20HLS%20%20Geospatial%20Foundation%20Model%20for%20Downstream%20Applications%20on%20Mars.pdf)
 ## Environment setup
 Follow instructions here [at the original HLS repo](https://github.com/NASA-IMPACT/hls-foundation-os) to setup the environment, paying close attention to the mmcv and mmsegmentation tool installation. Then, also make sure to install `pytorch-lightning==2.0` in order to use our training code for the classification.
 
